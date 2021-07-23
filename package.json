@@ -23,7 +23,7 @@
     "Jest",
     "MSW"
   ],
-  "author": "elizabeth",
+  "author": "",
   "dependencies": {
     "@reduxjs/toolkit": "^1.5.1",
     "@stripe/react-stripe-js": "^1.4.1",
