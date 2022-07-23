@@ -22,14 +22,12 @@ const AdminDashboard = React.lazy(
 const ProfileDashboard = React.lazy(
   () => import('../features/user/profile-dashboard/profile-dashboard.component')
 );
-const StripeOrderWrapper = React.lazy(
-  () => import('../pages/stripe-order-wrapper/stripe-order-wrapper.component')
-);
 
 import { selectMessage } from '../features/alert/alertSlice';
 import { Loading } from '../pages/loading/loading.component';
 import Alert from '../features/alert/alert/alert.component';
 import ErrorBoundary from '../app/error-boundary.component';
+import OrderPayment from '../pages/order-payment/order-payment.component';
 
 const App = (): JSX.Element => {
   const accessToken = useSelector(selectAccessToken);
@@ -74,7 +72,7 @@ const App = (): JSX.Element => {
               exact
               path='/payment'
               render={() =>
-                accessToken ? <StripeOrderWrapper /> : <Redirect to='/' />
+                accessToken ? <OrderPayment /> : <Redirect to='/' />
               }
             />
             <Route

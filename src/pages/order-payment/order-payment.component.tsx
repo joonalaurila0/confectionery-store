@@ -14,10 +14,6 @@ import { OrderStatus } from '../../features/order/orderSlice';
 import { create as createOrder } from '../../features/order/thunks';
 import { paymentSuccess } from '../../features/alert/alertSlice';
 
-// Stripe API
-import { CardElement, useElements, useStripe } from '@stripe/react-stripe-js';
-import { StripeCardElementChangeEvent } from '@stripe/stripe-js';
-
 const OrderPayment = (): JSX.Element => {
   const dispatch = useDispatch();
   const [payment, setPayment] = useState({
@@ -33,37 +29,9 @@ const OrderPayment = (): JSX.Element => {
   });
   const [error, setError] = useState('');
 
-  const CARD_OPTIONS = {
-    disabled: false,
-    iconStyle: 'solid' as const,
-    style: {
-      base: {
-        iconColor: '#6772e5',
-        color: '#6772e5',
-        fontWeight: 600,
-        fontFamily: 'Montserrat, Open Sans, Segoe UI, sans-serif',
-        fontSize: '10px',
-        fontSmoothing: 'antialiased',
-        ':-webkit-autofill': {
-          color: '#6772e5',
-        },
-        '::placeholder': {
-          color: '#6772e5',
-        },
-      },
-      invalid: {
-        iconColor: '#ffc7ee',
-        color: '#ffc7ee',
-      },
-    },
-  };
-
   const { push } = useHistory();
   const total = useSelector(selectCartTotal);
   const shippingInfo = useSelector(selectShippingInfo);
-
-  const stripe = useStripe();
-  const elements = useElements();
 
   const handleMethod = (event: React.FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
@@ -88,20 +56,7 @@ const OrderPayment = (): JSX.Element => {
     }
   };
 
-  const stripeElementChange = (e: StripeCardElementChangeEvent) => {
-    if (payment.submitted && e.empty) {
-      setError('Do not submit an empty form!');
-    }
-    if (e.error) {
-      setPayment({ ...payment, status: 'error' });
-      setError(e.error.message ?? 'An unknown error occured');
-    }
-    if (!e.empty && e.complete) {
-      setPayment({ ...payment, accepted: true });
-    }
-  };
-
-  // This method works with both payment methods
+  // This method is Stripe API specific
   const handlePayment: React.FormEventHandler<HTMLFormElement> = async (
     e
   ): Promise<void> => {
@@ -125,20 +80,12 @@ const OrderPayment = (): JSX.Element => {
       submitCount: payment.submitCount + 1,
     });
 
-    // Stripe API specific
-    // Demands presence of the API
-    if (!stripe || !elements) return;
-
     if (!e.currentTarget.reportValidity()) return;
 
     if (!payment.accepted) {
       setError('Finish payment information!');
       return;
     }
-
-    // Stripe API specific
-    // Demands presence of the API
-    const cardElement = elements && elements.getElement(CardElement);
 
     if (shippingInfo && payment.accepted === true)
       // Create's the actual order by calling POST /orders
@@ -173,53 +120,36 @@ const OrderPayment = (): JSX.Element => {
       return;
     }
 
-    // Stripe API specific
-    if (!cardElement) return;
+    // Check the response of the POST /orders request and decide whether to accept the payment based on that
 
-    /* Confirm the payment on the client */
-    // Stripe API specific
-    const { error, paymentIntent } = await stripe?.confirmCardPayment(
-      res.data.client_secret,
-      {
-        payment_method: {
-          card: cardElement,
-        },
-      }
-    );
+    //if (res.status === 500) {
+    //  setError(res.data.message);
+    //  setPayment({ ...payment, status: 'error' });
+    //  return;
+    //}
 
-    if (error) {
-      setPayment({ ...payment, status: 'error' });
-      setError(error.message ?? 'An unknown error occured');
-    } else if (paymentIntent) {
-      setPayment({ ...payment, paymentIntent: paymentIntent });
-    }
+    // If request was succesful, then update status
+    //if (res.status === 201 && paymentIntent.status === 'succeeded') {
+    //  setPayment({ ...payment, status: 'succeeded' });
+    //  // Side efffects
+    //  dispatch(paymentSuccess()); // Payment success notification
+    //  dispatch(clearCart()); // Clears the User Cart
+    //  dispatch(clearCartDB()); // Clears the User Cart
 
-    // Stripe API specific
-    if (paymentIntent && paymentIntent.status === 'succeeded') {
-      // Side efffects
-      dispatch(paymentSuccess()); // Payment success notification
-      dispatch(clearCart()); // Clears the User Cart
-      dispatch(clearCartDB()); // Clears the User Cart
-
-      // Push the user to a new page to show the invoice after 0.5 seconds
-      setTimeout(() => push('/purchase-confirmed'), 500);
-    }
+    //  // Push the user to a new page to show the invoice after 0.5 seconds
+    //  setTimeout(() => push('/purchase-confirmed'), 500);
+    //}
   };
-
   return (
     <div className='order-payment'>
       <h3 id='stripe-notice'>
-        Use <i id='stripe-testnums'>4242 4242 4242 4242</i> for stripe to test
-        the payment
+        Use <i id='stripe-testnums'>4242 4242 4242 4242</i> for card payment to
+        test the payment
       </h3>
       <div className='order-payment__wrapper'>
         {!payment.payment_method_submit ? (
           <form onSubmit={handleMethod}>
             <legend>Select payment method</legend>
-            <fieldset>
-              <input type='radio' id='stripe' name='method' value='stripe' />
-              <label htmlFor='stripe'>Stripe</label>
-            </fieldset>
             <fieldset>
               <input
                 type='radio'
@@ -232,67 +162,40 @@ const OrderPayment = (): JSX.Element => {
             <input type='submit' value='Submit' />
           </form>
         ) : payment.payment_method_submit &&
-          payment.payment_method === 'stripe' ? (
-          <div className='payment-stripe'>
-            <form onSubmit={handlePayment}>
-              <fieldset className='elements-style'>
-                <legend>Card details:</legend>
-                <div className='FormRow elements-style'>
-                  <CardElement
-                    options={CARD_OPTIONS}
-                    onChange={stripeElementChange}
-                  />
-                </div>
-                <button
-                  className='elements-style'
-                  disabled={payment.submitted ? true : false}
-                  onClick={() =>
-                    setPayment({
-                      ...payment,
-                      submitted: true,
-                      submitCount: payment.submitCount + 1,
-                    })
-                  }
-                >
-                  Pay ${total}
-                </button>
-              </fieldset>
-            </form>
-          </div>
-        ) : payment.payment_method === 'card-payment' ? (
+          payment.payment_method === 'card-payment' ? (
           <div className='card-payment-form'>
             <h1>Card Payment</h1>
-            <form>
+            <form onSubmit={handlePayment}>
               <div className='card-payment-form__inputbox'>
                 <input
                   type='text'
-                  name='username_signin'
-                  placeholder='Enter username'
+                  name='payment_name'
+                  placeholder='Enter name of the card holder'
                 />
                 <label htmlFor=''>Name</label>
               </div>
               <div className='card-payment-form__inputbox'>
                 <input
-                  type='password'
-                  name='password_signin'
-                  placeholder='Enter password'
+                  type='text'
+                  name='payment_cardnumber'
+                  placeholder='Enter Card Numbers'
                 />
                 <label htmlFor=''>Card Number</label>
               </div>
               <div className='card-payment-form__lastinputs'>
                 <div className='card-payment-form__inputbox'>
                   <input
-                    type='password'
-                    name='password_signin'
-                    placeholder='Enter password'
+                    type='text'
+                    name='payment_expiration'
+                    placeholder='Enter expiration date of the card'
                   />
                   <label htmlFor=''>Expiration</label>
                 </div>
                 <div className='card-payment-form__inputbox'>
                   <input
                     type='password'
-                    name='password_signin'
-                    placeholder='Enter password'
+                    name='payment_securitycode'
+                    placeholder='Enter security code of the card'
                   />
                   <label htmlFor=''>Security Code</label>
                 </div>
