@@ -16,7 +16,7 @@
   padding: 45px 25px;
 }
 
-.order-payment__wrapper form {
+.order-payment__wrapper__form {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -27,24 +27,24 @@
   background-color: #fffffe;
 }
 
-.order-payment__wrapper form input {
+.order-payment__wrapper__form input {
   padding: 10px;
   margin: 1em 0.4em 1em 2em;
 }
 
-.order-payment__wrapper form input[type=radio] {
+.order-payment__wrapper__form input[type=radio] {
   padding: 5px;
   cursor: pointer;
 }
 
-.order-payment__wrapper form label {
+.order-payment__wrapper__form label {
   font-size: 1.4em;
   font-weight: bold;
   cursor: pointer;
   color: #5f6c7b;
 }
 
-.order-payment__wrapper input[type=submit] {
+.order-payment__wrapper__form input[type=submit] {
   font-size: 1.2em;
   padding: 1em;
   margin: 1em;
@@ -57,11 +57,11 @@
   transition: 500ms ease-in;
 }
 
-.order-payment__wrapper input[type=submit]:hover {
+.order-payment__wrapper__form input[type=submit]:hover {
   background: orange;
 }
 
-.order-payment__wrapper form legend {
+.order-payment__wrapper__form legend {
   font-family: 'Montserrat', sans-serif;
   font-size: 1.6em;
   font-weight: 500;

@@ -71,6 +71,8 @@ const initialState: OrderState = {
 };
 
 export const clearRecentOrder = createAction('order/clearRecentOrder');
+// Adds api.createorder return values to the state
+export const propagateOrder = createAction<any>('order/propagateOrder');
 
 export const orderSlice = createSlice({
   name: 'order',
@@ -79,6 +81,11 @@ export const orderSlice = createSlice({
     clearRecentOrder: (state) => {
       state.recentOrder = null;
       state.recentOrderItems = null;
+    },
+    propagateOrder: (state, action) => {
+      state.orders.push(action.payload);
+      state.recentOrder = action.payload;
+      state.loading = false;
     },
   },
   extraReducers: (builder) => {

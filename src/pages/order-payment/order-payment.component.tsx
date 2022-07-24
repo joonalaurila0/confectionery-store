@@ -10,9 +10,10 @@ import { selectShippingInfo } from '../../features/user/selectors';
 import { clearCart } from '../../features/cart/cartSlice';
 import { ORDER_URL } from '../../features/order/api';
 import { clearCartDB } from '../../features/cart/thunks';
-import { OrderStatus } from '../../features/order/orderSlice';
-import { create as createOrder } from '../../features/order/thunks';
+import { orderSlice, OrderStatus, propagateOrder } from '../../features/order/orderSlice';
 import { paymentSuccess } from '../../features/alert/alertSlice';
+import { handleForm } from '../../features/forms/utils/utils';
+import orderReducer from '../../features/order/orderSlice'
 
 const OrderPayment = (): JSX.Element => {
   const dispatch = useDispatch();
@@ -37,15 +38,6 @@ const OrderPayment = (): JSX.Element => {
     event.preventDefault();
     if (
       (event.currentTarget.elements.namedItem('method') as HTMLInputElement)
-        .value === 'stripe'
-    ) {
-      setPayment({
-        ...payment,
-        payment_method: 'stripe',
-        payment_method_submit: true,
-      });
-    } else if (
-      (event.currentTarget.elements.namedItem('method') as HTMLInputElement)
         .value === 'card-payment'
     ) {
       setPayment({
@@ -61,6 +53,12 @@ const OrderPayment = (): JSX.Element => {
     e
   ): Promise<void> => {
     e.preventDefault();
+    const {
+      payment_cardnumber,
+      payment_expiration,
+      payment_name,
+      payment_securitycode,
+    } = handleForm(e.currentTarget.elements);
 
     if (payment.submitCount >= 4) {
       setError('Too many submits, please wait for response');
@@ -74,71 +72,71 @@ const OrderPayment = (): JSX.Element => {
       setError('Do not spam the prompt!');
     }
 
-    setPayment({
-      ...payment,
-      submitted: true,
-      submitCount: payment.submitCount + 1,
-    });
+    console.log("Security code: ", payment_securitycode.match(/^[0-9]{3}$/gi))
+    console.log("Credit Card Number: ", payment_cardnumber.match(/^(\s?\d\s?){16}$/gi))
+    console.log("First and Lastname: ", payment_name.match(/[^0-9\.\,\"\?\!\;\:\#\$\%\&\(\)\*\+\-\/\<\>\=\@\[\]\\\^\_\{\}\|\~]+/gi))
+    console.log("Expiration date: ", payment_expiration.match(/^(0[1-9]|1[0-2])\/?([0-9]{2})$/gi))
 
-    if (!e.currentTarget.reportValidity()) return;
-
-    if (!payment.accepted) {
-      setError('Finish payment information!');
+    // Credit Card 16 numbers
+    if (payment_cardnumber.match(/^(\s?\d\s?){16}$/gi) == null) {
+      setError('Incorrect card number!');
+      return;
+    }
+    // First and lastname by negating
+    if (
+      payment_name.match(
+        /[^0-9\.\,\"\?\!\;\:\#\$\%\&\(\)\*\+\-\/\<\>\=\@\[\]\\\^\_\{\}\|\~]+/gi
+      ) == null
+    ) {
+      setError('Incorrect name for the card holder!');
+      return;
+    }
+    // Credit Card expiration date MM/YY
+    if (payment_expiration.match(/^(0[1-9]|1[0-2])\/?([0-9]{2})$/gi) == null) {
+      setError('Incorrect expiration date!');
+      return;
+    }
+    // Three digit security code
+    if (payment_securitycode.match(/^[0-9]{3}$/gi) == null) {
+      setError('Incorrect security code!');
       return;
     }
 
-    if (shippingInfo && payment.accepted === true)
-      // Create's the actual order by calling POST /orders
-      dispatch(
-        createOrder({
+    setError('Processing card information...');
+
+    if (!e.currentTarget.reportValidity()) return;
+
+    if (shippingInfo) {
+      const orderResponse = await axios.post(
+        ORDER_URL,
+        {
           total_price: total,
           status: OrderStatus.UNPAID,
           address: shippingInfo.address,
           country: shippingInfo.country,
           city: shippingInfo.city,
           postalcode: shippingInfo.postalcode,
-        })
+        },
+        { headers: authHeader() }
       );
 
-    // Stripe API specific
-    /* Create payment intent on the server */
-    const res = await axios.post(
-      ORDER_URL + 'create-payment-intent',
-      { amount: total, currency: 'usd', payment_method_types: 'card' },
-      {
-        headers: authHeader(),
+      if (payment.accepted) setError('Processing payment...');
+
+      if (orderResponse.status == 201) {
+        // Call to propagate the state with order for next page.
+        dispatch(propagateOrder(orderResponse.data));
+        //console.log(orderSlice.actions.propagateOrder(orderResponse.data));
+        setPayment({ ...payment, status: 'succeeded' });
+
+        // Side efffects
+        dispatch(paymentSuccess()); // Payment success notification
+        dispatch(clearCart()); // Clears the User Cart
+        dispatch(clearCartDB()); // Clears the User Cart
+
+        // Push the user to a new page to show the invoice after 0.5 seconds
+        setTimeout(() => push('/purchase-confirmed'), 500);
       }
-    );
-
-    if (payment.accepted) {
-      setError('Processing payment...');
     }
-
-    if (res.status === 500) {
-      setError(res.data.message);
-      setPayment({ ...payment, status: 'error' });
-      return;
-    }
-
-    // Check the response of the POST /orders request and decide whether to accept the payment based on that
-
-    //if (res.status === 500) {
-    //  setError(res.data.message);
-    //  setPayment({ ...payment, status: 'error' });
-    //  return;
-    //}
-
-    // If request was succesful, then update status
-    //if (res.status === 201 && paymentIntent.status === 'succeeded') {
-    //  setPayment({ ...payment, status: 'succeeded' });
-    //  // Side efffects
-    //  dispatch(paymentSuccess()); // Payment success notification
-    //  dispatch(clearCart()); // Clears the User Cart
-    //  dispatch(clearCartDB()); // Clears the User Cart
-
-    //  // Push the user to a new page to show the invoice after 0.5 seconds
-    //  setTimeout(() => push('/purchase-confirmed'), 500);
-    //}
   };
   return (
     <div className='order-payment'>
@@ -148,7 +146,10 @@ const OrderPayment = (): JSX.Element => {
       </h3>
       <div className='order-payment__wrapper'>
         {!payment.payment_method_submit ? (
-          <form onSubmit={handleMethod}>
+          <form
+            onSubmit={handleMethod}
+            className='order-payment__wrapper__form'
+          >
             <legend>Select payment method</legend>
             <fieldset>
               <input
@@ -170,7 +171,7 @@ const OrderPayment = (): JSX.Element => {
                 <input
                   type='text'
                   name='payment_name'
-                  placeholder='Enter name of the card holder'
+                  placeholder='Arthur Thomas'
                 />
                 <label htmlFor=''>Name</label>
               </div>
@@ -178,7 +179,7 @@ const OrderPayment = (): JSX.Element => {
                 <input
                   type='text'
                   name='payment_cardnumber'
-                  placeholder='Enter Card Numbers'
+                  placeholder='4242 4242 4242 4242'
                 />
                 <label htmlFor=''>Card Number</label>
               </div>
@@ -187,7 +188,7 @@ const OrderPayment = (): JSX.Element => {
                   <input
                     type='text'
                     name='payment_expiration'
-                    placeholder='Enter expiration date of the card'
+                    placeholder='02/24'
                   />
                   <label htmlFor=''>Expiration</label>
                 </div>
@@ -195,7 +196,7 @@ const OrderPayment = (): JSX.Element => {
                   <input
                     type='password'
                     name='payment_securitycode'
-                    placeholder='Enter security code of the card'
+                    placeholder='389'
                   />
                   <label htmlFor=''>Security Code</label>
                 </div>
