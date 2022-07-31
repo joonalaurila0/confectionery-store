@@ -27,11 +27,11 @@ function AdminDashboard(): JSX.Element {
   const role = useSelector(selectRole);
 
   React.useEffect(() => {
-  if (role === 'GUEST' && localStorage.getItem('notif') !== 'visited') {
-    dispatch(adminGuestNotification({ timeout: 6000 }));
-    setTimeout(() => localStorage.setItem('notif', 'visited'), 1000 * 3);
-  }
-  }, [dispatch])
+    if (role === 'GUEST' && localStorage.getItem('notif') !== 'visited') {
+      dispatch(adminGuestNotification({ timeout: 6000 }));
+      setTimeout(() => localStorage.setItem('notif', 'visited'), 1000 * 3);
+    }
+  }, [dispatch]);
 
   return (
     <div className='admin-controls'>

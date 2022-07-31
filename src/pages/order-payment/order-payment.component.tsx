@@ -10,10 +10,14 @@ import { selectShippingInfo } from '../../features/user/selectors';
 import { clearCart } from '../../features/cart/cartSlice';
 import { ORDER_URL } from '../../features/order/api';
 import { clearCartDB } from '../../features/cart/thunks';
-import { orderSlice, OrderStatus, propagateOrder } from '../../features/order/orderSlice';
+import {
+  orderSlice,
+  OrderStatus,
+  propagateOrder,
+} from '../../features/order/orderSlice';
 import { paymentSuccess } from '../../features/alert/alertSlice';
 import { handleForm } from '../../features/forms/utils/utils';
-import orderReducer from '../../features/order/orderSlice'
+import orderReducer from '../../features/order/orderSlice';
 
 const OrderPayment = (): JSX.Element => {
   const dispatch = useDispatch();
@@ -72,10 +76,21 @@ const OrderPayment = (): JSX.Element => {
       setError('Do not spam the prompt!');
     }
 
-    console.log("Security code: ", payment_securitycode.match(/^[0-9]{3}$/gi))
-    console.log("Credit Card Number: ", payment_cardnumber.match(/^(\s?\d\s?){16}$/gi))
-    console.log("First and Lastname: ", payment_name.match(/[^0-9\.\,\"\?\!\;\:\#\$\%\&\(\)\*\+\-\/\<\>\=\@\[\]\\\^\_\{\}\|\~]+/gi))
-    console.log("Expiration date: ", payment_expiration.match(/^(0[1-9]|1[0-2])\/?([0-9]{2})$/gi))
+    console.log('Security code: ', payment_securitycode.match(/^[0-9]{3}$/gi));
+    console.log(
+      'Credit Card Number: ',
+      payment_cardnumber.match(/^(\s?\d\s?){16}$/gi)
+    );
+    console.log(
+      'First and Lastname: ',
+      payment_name.match(
+        /[^0-9\.\,\"\?\!\;\:\#\$\%\&\(\)\*\+\-\/\<\>\=\@\[\]\\\^\_\{\}\|\~]+/gi
+      )
+    );
+    console.log(
+      'Expiration date: ',
+      payment_expiration.match(/^(0[1-9]|1[0-2])\/?([0-9]{2})$/gi)
+    );
 
     // Credit Card 16 numbers
     if (payment_cardnumber.match(/^(\s?\d\s?){16}$/gi) == null) {
