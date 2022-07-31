@@ -67,11 +67,11 @@ function OrdersDashboard(): JSX.Element {
     .map((entry) => {
       let points = 0;
 
-      if (entry.userId.toLowerCase().includes(input.search.toLowerCase())) {
+      if (entry.user_id.toLowerCase().includes(input.search.toLowerCase())) {
         points += 2;
       }
 
-      if (entry.userId.toLowerCase().includes(input.search.toLowerCase())) {
+      if (entry.user_id.toLowerCase().includes(input.search.toLowerCase())) {
         points += 1;
       }
 
@@ -147,12 +147,12 @@ function OrdersDashboard(): JSX.Element {
                   city,
                   postalcode,
                   status,
-                  userId,
+                  user_id,
                   id,
                 }) => (
                   <tr key={id}>
                     <td>{id}</td>
-                    <td>{userId}</td>
+                    <td>{user_id}</td>
                     <td>${total_price}</td>
                     <td>{address}</td>
                     <td>{country}</td>
@@ -171,14 +171,6 @@ function OrdersDashboard(): JSX.Element {
                         name='selection'
                         id='selection'
                       />
-                    </td>
-                    <td>
-                      <Link
-                        to={`/admin-controls/products-edit/${id}`}
-                        id='edit-link'
-                      >
-                        Edit
-                      </Link>
                     </td>
                     <td>
                       <button
@@ -200,12 +192,12 @@ function OrdersDashboard(): JSX.Element {
                   city,
                   postalcode,
                   status,
-                  userId,
+                  user_id,
                   id,
                 }) => (
                   <tr key={id}>
                     <td>{id}</td>
-                    <td>{userId}</td>
+                    <td>{user_id}</td>
                     <td>${total_price}</td>
                     <td>{address}</td>
                     <td>{country}</td>
@@ -224,14 +216,6 @@ function OrdersDashboard(): JSX.Element {
                         name='selection'
                         id='selection'
                       />
-                    </td>
-                    <td>
-                      <Link
-                        to={`/admin-controls/products-edit/${id}`}
-                        id='edit-link'
-                      >
-                        Edit
-                      </Link>
                     </td>
                     <td>
                       <button

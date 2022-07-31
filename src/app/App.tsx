@@ -33,7 +33,6 @@ const App = (): JSX.Element => {
   const accessToken = useSelector(selectAccessToken);
   const role = useSelector(selectRole);
   const alertMessage = useSelector(selectMessage);
-
   return (
     <>
       <React.Suspense fallback={<Loading />}>

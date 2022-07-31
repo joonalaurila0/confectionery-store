@@ -126,13 +126,13 @@ function UserDashboard(): JSX.Element {
           </tr>
         </thead>
         {input.search.length > 0
-          ? rankedIndex.map(({ id, email, role, createdAt }) => (
+          ? rankedIndex.map(({ id, email, role, registered_at }) => (
               <tbody key={id}>
                 <tr>
                   <td>{id}</td>
                   <td>{email}</td>
                   <td>{role}</td>
-                  <td>{createdAt}</td>
+                  <td>{registered_at}</td>
                   <td>
                     <input
                       onChange={onCheckbox}
@@ -157,13 +157,13 @@ function UserDashboard(): JSX.Element {
                 </tr>
               </tbody>
             ))
-          : miumau.map(({ id, email, role, createdAt }) => (
+          : miumau.map(({ id, email, role, registered_at }) => (
               <tbody key={id}>
                 <tr>
                   <td>{id}</td>
                   <td>{email}</td>
                   <td>{role}</td>
-                  <td>{createdAt}</td>
+                  <td>{registered_at}</td>
                   <td>
                     <input
                       onChange={onCheckbox}
