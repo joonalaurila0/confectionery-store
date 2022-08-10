@@ -27,9 +27,9 @@ function AdminDashboard(): JSX.Element {
   const role = useSelector(selectRole);
 
   React.useEffect(() => {
-    if (role === 'GUEST' && localStorage.getItem('notif') !== 'visited') {
+    if (role === 'GUEST' && localStorage.getItem('notif-admin') !== 'visited') {
       dispatch(adminGuestNotification({ timeout: 6000 }));
-      setTimeout(() => localStorage.setItem('notif', 'visited'), 1000 * 3);
+      setTimeout(() => localStorage.setItem('notif-admin', 'visited'), 1000 * 3);
     }
   }, [dispatch]);
 
